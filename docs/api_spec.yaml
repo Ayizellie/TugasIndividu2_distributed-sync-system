@@ -1,0 +1,559 @@
+openapi: 3.0.0
+info:
+  title: Distributed Synchronization System API
+  description: API documentation untuk Distributed Lock Manager, Queue System, dan Cache System
+  version: 1.0.0
+  contact:
+    name: Your Name
+    email: your.email@example.com
+
+servers:
+  - url: http://localhost:5001
+    description: Lock Manager Node 1
+  - url: http://localhost:6001
+    description: Queue Node 1
+  - url: http://localhost:7001
+    description: Cache Node 1
+
+tags:
+  - name: Lock Manager
+    description: Distributed lock operations
+  - name: Queue System
+    description: Distributed queue operations
+  - name: Cache System
+    description: Distributed cache operations
+  - name: System
+    description: System status and health checks
+
+paths:
+  # ==================== LOCK MANAGER ====================
+  /api/lock/acquire:
+    post:
+      tags:
+        - Lock Manager
+      summary: Acquire a lock
+      description: Acquire a shared or exclusive lock on a resource
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - resource_id
+                - lock_type
+                - requester_id
+              properties:
+                resource_id:
+                  type: string
+                  description: ID of the resource to lock
+                  example: "resource_1"
+                lock_type:
+                  type: string
+                  enum: [shared, exclusive]
+                  description: Type of lock
+                  example: "exclusive"
+                requester_id:
+                  type: integer
+                  description: ID of the requesting node
+                  example: 1
+      responses:
+        '200':
+          description: Lock request processed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [acquired, waiting, denied]
+                    example: "acquired"
+                  resource_id:
+                    type: string
+                    example: "resource_1"
+                  lock_type:
+                    type: string
+                    example: "exclusive"
+                  queue_position:
+                    type: integer
+                    description: Position in wait queue (if waiting)
+                    example: 2
+                  reason:
+                    type: string
+                    description: Reason for denial (if denied)
+                    example: "deadlock_detected"
+
+  /api/lock/release:
+    post:
+      tags:
+        - Lock Manager
+      summary: Release a lock
+      description: Release a previously acquired lock
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - resource_id
+                - releaser_id
+              properties:
+                resource_id:
+                  type: string
+                  example: "resource_1"
+                releaser_id:
+                  type: integer
+                  example: 1
+      responses:
+        '200':
+          description: Lock released successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "released"
+                  resource_id:
+                    type: string
+                    example: "resource_1"
+
+  /api/lock/status:
+    get:
+      tags:
+        - Lock Manager
+      summary: Get lock manager status
+      description: Get current status of all locks and statistics
+      responses:
+        '200':
+          description: Lock manager status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  node_id:
+                    type: integer
+                    example: 1
+                  is_leader:
+                    type: boolean
+                    example: true
+                  active_locks:
+                    type: integer
+                    example: 5
+                  waiting_requests:
+                    type: integer
+                    example: 2
+                  locks:
+                    type: object
+                    additionalProperties:
+                      type: object
+                      properties:
+                        type:
+                          type: string
+                          example: "exclusive"
+                        owners:
+                          type: array
+                          items:
+                            type: integer
+                          example: [1]
+                        age:
+                          type: number
+                          example: 12.5
+                  statistics:
+                    type: object
+                    properties:
+                      locks_acquired:
+                        type: integer
+                        example: 100
+                      locks_released:
+                        type: integer
+                        example: 95
+                      lock_timeouts:
+                        type: integer
+                        example: 2
+                      deadlocks_detected:
+                        type: integer
+                        example: 1
+
+  # ==================== QUEUE SYSTEM ====================
+  /api/queue/enqueue:
+    post:
+      tags:
+        - Queue System
+      summary: Enqueue a message
+      description: Add a message to the distributed queue
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - message_id
+                - data
+              properties:
+                message_id:
+                  type: string
+                  description: Unique message identifier
+                  example: "msg_12345"
+                data:
+                  type: object
+                  description: Message payload
+                  example:
+                    content: "Hello World"
+                    timestamp: 1698765432
+      responses:
+        '200':
+          description: Message enqueued
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "enqueued"
+                  message_id:
+                    type: string
+                    example: "msg_12345"
+                  node_id:
+                    type: integer
+                    example: 1
+
+  /api/queue/dequeue:
+    post:
+      tags:
+        - Queue System
+      summary: Dequeue a message
+      description: Get the next message from the queue
+      responses:
+        '200':
+          description: Message dequeued
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message_id:
+                    type: string
+                    example: "msg_12345"
+                  data:
+                    type: object
+                    example:
+                      content: "Hello World"
+                  retry_count:
+                    type: integer
+                    example: 0
+        '404':
+          description: Queue is empty
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Queue empty"
+
+  /api/queue/ack:
+    post:
+      tags:
+        - Queue System
+      summary: Acknowledge message
+      description: Acknowledge successful processing of a message
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - message_id
+              properties:
+                message_id:
+                  type: string
+                  example: "msg_12345"
+      responses:
+        '200':
+          description: Message acknowledged
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "acknowledged"
+                  message_id:
+                    type: string
+                    example: "msg_12345"
+
+  /api/queue/status:
+    get:
+      tags:
+        - Queue System
+      summary: Get queue status
+      description: Get current queue status and statistics
+      responses:
+        '200':
+          description: Queue status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  node_id:
+                    type: integer
+                    example: 1
+                  queue_size:
+                    type: integer
+                    example: 10
+                  pending:
+                    type: integer
+                    example: 7
+                  processing:
+                    type: integer
+                    example: 2
+                  failed:
+                    type: integer
+                    example: 1
+                  statistics:
+                    type: object
+                    properties:
+                      enqueued:
+                        type: integer
+                        example: 150
+                      dequeued:
+                        type: integer
+                        example: 140
+                      failed:
+                        type: integer
+                        example: 3
+
+  # ==================== CACHE SYSTEM ====================
+  /api/cache/get:
+    get:
+      tags:
+        - Cache System
+      summary: Get from cache
+      description: Retrieve a value from the distributed cache
+      parameters:
+        - name: key
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Cache key
+          example: "user_123"
+      responses:
+        '200':
+          description: Cache response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [hit, miss]
+                    example: "hit"
+                  key:
+                    type: string
+                    example: "user_123"
+                  value:
+                    type: object
+                    example:
+                      name: "John Doe"
+                      age: 30
+                  node_id:
+                    type: integer
+                    example: 1
+                  source:
+                    type: string
+                    enum: [local, remote]
+                    example: "local"
+
+  /api/cache/put:
+    post:
+      tags:
+        - Cache System
+      summary: Put to cache
+      description: Store a value in the distributed cache
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - key
+                - value
+              properties:
+                key:
+                  type: string
+                  example: "user_123"
+                value:
+                  type: object
+                  example:
+                    name: "John Doe"
+                    age: 30
+      responses:
+        '200':
+          description: Value stored
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  key:
+                    type: string
+                    example: "user_123"
+                  node_id:
+                    type: integer
+                    example: 1
+
+  /api/cache/status:
+    get:
+      tags:
+        - Cache System
+      summary: Get cache status
+      description: Get cache statistics and status
+      responses:
+        '200':
+          description: Cache status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  node_id:
+                    type: integer
+                    example: 1
+                  cache_size:
+                    type: integer
+                    example: 85
+                  capacity:
+                    type: integer
+                    example: 1000
+                  hit_rate:
+                    type: number
+                    format: float
+                    example: 0.85
+                  statistics:
+                    type: object
+                    properties:
+                      reads:
+                        type: integer
+                        example: 500
+                      writes:
+                        type: integer
+                        example: 100
+                      hits:
+                        type: integer
+                        example: 425
+                      misses:
+                        type: integer
+                        example: 75
+                      evictions:
+                        type: integer
+                        example: 15
+                      invalidations_sent:
+                        type: integer
+                        example: 20
+                      invalidations_received:
+                        type: integer
+                        example: 18
+
+  # ==================== SYSTEM ====================
+  /api/status:
+    get:
+      tags:
+        - System
+      summary: Get node status
+      description: Get overall node status including Raft state
+      responses:
+        '200':
+          description: Node status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  node_id:
+                    type: integer
+                    example: 1
+                  address:
+                    type: string
+                    example: "localhost:5001"
+                  running:
+                    type: boolean
+                    example: true
+                  raft_state:
+                    type: object
+                    properties:
+                      node_id:
+                        type: integer
+                        example: 1
+                      state:
+                        type: string
+                        enum: [follower, candidate, leader]
+                        example: "leader"
+                      term:
+                        type: integer
+                        example: 5
+                      leader_id:
+                        type: integer
+                        example: 1
+
+  /health:
+    get:
+      tags:
+        - System
+      summary: Health check
+      description: Check if the node is healthy
+      responses:
+        '200':
+          description: Node is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "healthy"
+        '503':
+          description: Node is unhealthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "unhealthy"
+
+  /api/metrics:
+    get:
+      tags:
+        - System
+      summary: Prometheus metrics
+      description: Get metrics in Prometheus format
+      responses:
+        '200':
+          description: Prometheus metrics
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: |
+                  # HELP request_total Total number of requests
+                  # TYPE request_total counter
+                  request_total{method="POST",endpoint="/api/lock/acquire"} 150
