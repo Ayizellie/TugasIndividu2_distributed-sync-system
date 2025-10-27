@@ -115,7 +115,7 @@ class MessagePassing:
     async def initialize(self):
         """Initialize HTTP client session"""
         self.session = aiohttp.ClientSession(
-            timeout=aiohttp.ClientTimeout(total=5)  # 5 second timeout
+            timeout=aiohttp.ClientTimeout(total=5)  
         )
         logger.info(f"MessagePassing initialized for node {self.node_id}")
     

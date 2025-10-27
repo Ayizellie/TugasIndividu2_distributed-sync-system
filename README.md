@@ -1,6 +1,9 @@
 # Distributed Synchronization System
 Sistem sinkronisasi terdistribusi yang siap produksi dengan implementasi Raft Consensus, Consistent Hashing, dan MESI Cache Coherence Protocol.
 
+### Link Youtube : 
+**https://youtu.be/aYWEIQdJzSg?si=lj9sVvp1J08UF8h-**
+
 ## FITUR
 ### Distributed Lock Manager
 - Algoritma Raft Consensus untuk koordinasi terdistribusi

@@ -17,21 +17,21 @@ class MetricsCollector:
     """
     
     def __init__(self):
-        # Counter: nilai yang selalu naik (contoh: jumlah request)
+        # Counter: nilai yang selalu naik 
         self.request_count = Counter(
             'request_total',
             'Total number of requests',
             ['method', 'endpoint']
         )
         
-        # Histogram: distribusi nilai (contoh: response time)
+        # Histogram: distribusi nilai 
         self.request_latency = Histogram(
             'request_latency_seconds',
             'Request latency in seconds',
             ['method', 'endpoint']
         )
         
-        # Gauge: nilai yang bisa naik/turun (contoh: jumlah node aktif)
+        # Gauge: nilai yang bisa naik/turun 
         self.active_nodes = Gauge(
             'active_nodes',
             'Number of active nodes'

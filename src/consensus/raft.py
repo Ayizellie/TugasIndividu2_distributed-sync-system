@@ -41,9 +41,9 @@ class LogEntry:
     Satu entry dalam Raft log.
     Berisi command yang akan di-apply ke state machine.
     """
-    term: int  # Term saat entry ini dibuat
-    index: int  # Position dalam log (starting from 1)
-    command: Dict[str, Any]  # Command untuk state machine
+    term: int  
+    index: int  
+    command: Dict[str, Any]  
     
     def __repr__(self):
         return f"LogEntry(term={self.term}, index={self.index})"
@@ -55,13 +55,13 @@ class RaftState:
     Persistent state yang harus di-save ke disk.
     Dalam implementasi ini kita simplify dengan in-memory storage.
     """
-    # Current term number (increases monotonically)
+    # Current term number 
     current_term: int = 0
     
-    # Candidate yang di-vote pada current term (None jika belum vote)
+    # Candidate yang di-vote pada current term 
     voted_for: Optional[int] = None
     
-    # Log entries (index starts from 1)
+    # Log entries
     log: List[LogEntry] = field(default_factory=list)
     
     def get_last_log_index(self) -> int:
@@ -89,10 +89,10 @@ class RaftNode:
     
     def __init__(self,
                  node_id: int,
-                 peers: List[str],  # List of "host:port"
+                 peers: List[str],  
                  message_passing: MessagePassing,
-                 election_timeout_range: tuple = (150, 300),  # milliseconds
-                 heartbeat_interval: int = 50):  # milliseconds
+                 election_timeout_range: tuple = (150, 300),  
+                 heartbeat_interval: int = 50):  
         """
         Args:
             node_id: Unique ID untuk node ini
@@ -115,12 +115,12 @@ class RaftNode:
         self.raft_state = RaftState()
         
         # Volatile state (reset after restart)
-        self.commit_index = 0  # Index of highest log entry known to be committed
-        self.last_applied = 0  # Index of highest log entry applied to state machine
+        self.commit_index = 0  
+        self.last_applied = 0  
         
         # Leader-only volatile state
-        self.next_index: Dict[str, int] = {}  # For each peer, index of next log to send
-        self.match_index: Dict[str, int] = {}  # For each peer, index of highest log replicated
+        self.next_index: Dict[str, int] = {}  
+        self.match_index: Dict[str, int] = {}  
         
         # Current leader (None if unknown)
         self.current_leader: Optional[int] = None
@@ -198,7 +198,7 @@ class RaftNode:
         
         self.state = NodeState.CANDIDATE
         self.raft_state.current_term += 1
-        self.raft_state.voted_for = self.node_id  # Vote for self
+        self.raft_state.voted_for = self.node_id  
         self.current_leader = None
         self.elections_started += 1
         
@@ -236,7 +236,7 @@ class RaftNode:
         """
         while self._running:
             try:
-                await asyncio.sleep(0.01)  # Check every 10ms
+                await asyncio.sleep(0.01)  
                 
                 # Only followers and candidates have election timeout
                 if self.state in [NodeState.FOLLOWER, NodeState.CANDIDATE]:
@@ -279,15 +279,15 @@ class RaftNode:
         # Broadcast ke all peers
         responses = await self.mp.broadcast_message(self.peers, vote_request)
         
-        # Count votes (self vote + received votes)
-        votes_received = 1  # Vote for self
+        # Count votes 
+        votes_received = 1  
         
         for response in responses:
             if response and response.get('vote_granted'):
                 votes_received += 1
         
         # Check if won election (majority)
-        total_nodes = len(self.peers) + 1  # peers + self
+        total_nodes = len(self.peers) + 1  
         majority = (total_nodes // 2) + 1
         
         logger.info(f"Node {self.node_id}: Received {votes_received}/{total_nodes} votes "
@@ -339,7 +339,7 @@ class RaftNode:
                 if log_is_updated:
                     vote_granted = True
                     self.raft_state.voted_for = candidate_id
-                    self.last_heartbeat_time = time.time()  # Reset election timer
+                    self.last_heartbeat_time = time.time()  
                     logger.info(f"Node {self.node_id}: Granted vote to {candidate_id}")
         
         return {
@@ -414,7 +414,7 @@ class RaftNode:
             
             success = True
             
-            # Log replication logic (simplified - no actual entries for now)
+            # Log replication logic 
             if entries:
                 logger.info(f"Node {self.node_id}: Received {len(entries)} log entries from leader")
         

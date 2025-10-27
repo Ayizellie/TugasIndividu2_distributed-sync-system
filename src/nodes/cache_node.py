@@ -30,10 +30,10 @@ logger = logging.getLogger(__name__)
 
 class MESIState(Enum):
     """MESI cache states"""
-    MODIFIED = "M"    # Dirty, exclusive
-    EXCLUSIVE = "E"   # Clean, exclusive
-    SHARED = "S"      # Clean, may be in other caches
-    INVALID = "I"     # Not valid
+    MODIFIED = "M"    
+    EXCLUSIVE = "E"   
+    SHARED = "S"      
+    INVALID = "I"     
 
 
 @dataclass
@@ -299,8 +299,6 @@ class CacheNode(BaseNode):
             
             logger.info(f"Updated {key} (state=MODIFIED)")
         else:
-            # Cache miss - insert new
-            # Broadcast invalidate (in case others have it)
             await self._broadcast_invalidate(key)
             
             # Insert as MODIFIED
@@ -366,13 +364,10 @@ class CacheNode(BaseNode):
         
         # Transition state untuk sharing
         if line.state == MESIState.EXCLUSIVE:
-            # E -> S (another cache will have copy)
             line.state = MESIState.SHARED
             logger.debug(f"{key}: E -> S (shared with node {message.sender_id})")
         
         elif line.state == MESIState.MODIFIED:
-            # M -> S (simplified, in real system would write back)
-            # For this implementation, we'll keep as SHARED
             line.state = MESIState.SHARED
             logger.debug(f"{key}: M -> S (shared with node {message.sender_id})")
         
@@ -436,7 +431,7 @@ class CacheNode(BaseNode):
                 'invalidations_sent': self.invalidations_sent,
                 'invalidations_received': self.invalidations_received
             },
-            'entries': entries[:10]  # Show first 10 entries
+            'entries': entries[:10] 
         }
         return web.json_response(status)
 
@@ -476,7 +471,7 @@ async def test_cache_node():
     
     await asyncio.sleep(0.5)
     
-    # Test 2: Node 2 reads (should fetch from Node 1, both become SHARED)
+    # Test 2: Node 2 reads (
     print("\n2. Node 2 reads 'key1'")
     result = await nodes[1].cache_get('key1')
     print(f"   Result: {result}")

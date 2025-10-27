@@ -23,8 +23,8 @@ logger = logging.getLogger(__name__)
 
 class LockType(Enum):
     """Tipe locks"""
-    SHARED = "shared"      # Multiple readers, no writers
-    EXCLUSIVE = "exclusive"  # Single writer, no readers/writers
+    SHARED = "shared"      
+    EXCLUSIVE = "exclusive"  
 
 
 @dataclass
@@ -32,7 +32,7 @@ class Lock:
     """Represents a lock on a resource"""
     resource_id: str
     lock_type: LockType
-    owner_ids: Set[int]  # Node IDs yang hold lock (multiple untuk shared)
+    owner_ids: Set[int] 
     acquired_time: float
     
     def __repr__(self):
@@ -166,7 +166,7 @@ class LockManager(BaseNode):
         """Background task untuk cleanup expired locks"""
         while self._running:
             try:
-                await asyncio.sleep(5)  # Check every 5 seconds
+                await asyncio.sleep(5)  
                 await self._cleanup_expired_locks()
             except asyncio.CancelledError:
                 break
